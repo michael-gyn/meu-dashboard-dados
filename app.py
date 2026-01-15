@@ -31,7 +31,7 @@ def load_data(url):
 # Execução
 df = load_data(URL_CSV)
 
-# 2. INTERFACE (O que aparecerá no Notion)
+# 2. INTERFACE (O que aparecerá no Notion1)
 if df is not None:
     st.title("📊 Monitor de Performance")
     
