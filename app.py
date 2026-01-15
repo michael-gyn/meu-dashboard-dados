@@ -1,35 +1,59 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import requests
+from io import StringIO
 
-st.set_page_config(page_title="Dashboard Imersão", layout="wide")
+# Configuração de Layout para o Notion
+st.set_page_config(page_title="PO Dashboard", layout="wide")
 
-# Link do CSV (o mesmo que você usou no Colab)
-URL_CSV = "COLE_AQUI_SEU_LINK_DO_CSV"
+# 1. ENDEREÇO DOS DADOS (Substitua pelo seu link CSV aqui)
+URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSpleIWJqucqHpRsU3ERKNAmE_shgQS89UsAVBXwrm9Gjyk1rrEuAhiV4ysUE9tFwQOE0INJFghTfkJ/pub?gid=0&single=true&output=csv"
 
-@st.cache_data # Faz o app carregar mais rápido
-def carregar_dados():
-    return pd.read_csv(URL_CSV)
+@st.cache_data(ttl=600) # Atualiza a cada 10 minutos
+def load_data(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            # Transforma o texto recebido em um arquivo que o Pandas entende
+            dados_brutos = StringIO(response.text)
+            df = pd.read_csv(dados_brutos)
+            
+            # Limpeza de colunas (converte para minúsculo e remove espaços)
+            df.columns = [str(c).lower().strip() for c in df.columns]
+            return df
+        else:
+            st.error(f"Erro ao acessar planilha. Status: {response.status_code}")
+            return None
+    except Exception as e:
+        st.error(f"Falha crítica na conexão: {e}")
+        return None
 
-df = carregar_dados()
+# Execução
+df = load_data(URL_CSV)
 
-st.title("🚀 Meu Front-end de Dados")
+# 2. INTERFACE (O que aparecerá no Notion)
+if df is not None:
+    st.title("📊 Monitor de Performance")
+    
+    # Validação das colunas (ID, descrição, categoria, valor)
+    colunas_foco = ['id', 'descrição', 'categoria', 'valor']
+    
+    if all(c in df.columns for c in colunas_foco):
+        # Filtro de Categoria
+        categorias = df['categoria'].unique()
+        selecao = st.sidebar.multiselect("Filtrar Categoria", categorias, default=categorias)
+        
+        df_filtrado = df[df['categoria'].isin(selecao)]
 
-# Filtro na barra lateral
-categorias = df['categoria'].unique()
-filtro = st.sidebar.multiselect("Filtrar por Categoria", categorias, default=categorias)
+        # Métricas de Negócio
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Valor Total", f"R$ {df_filtrado['valor'].sum():,.2f}")
+        m2.metric("Média por Item", f"R$ {df_filtrado['valor'].mean():,.2f}")
+        m3.metric("Qtd Itens", len(df_filtrado))
 
-df_filtrado = df[df['categoria'].isin(filtro)]
-
-# Exibindo Métricas
-col1, col2 = st.columns(2)
-col1.metric("Soma dos Valores", f"R$ {df_filtrado['valor'].sum():,.2f}")
-col2.metric("Itens Listados", len(df_filtrado))
-
-# Gráfico de Storytelling
-st.subheader("Análise Visual")
-fig = px.bar(df_filtrado, x='descrição', y='valor', color='categoria', barmode='group')
-st.plotly_chart(fig, use_container_width=True)
-
-# Tabela
-st.dataframe(df_filtrado, use_container_width=True)
+        # Tabela e Gráfico
+        st.divider()
+        st.subheader("Visualização de Dados")
+        st.dataframe(df_filtrado, use_container_width=True)
+    else:
+        st.warning(f"Atenção PO: Verifique se os nomes das colunas na Planilha são: {colunas_foco}")
