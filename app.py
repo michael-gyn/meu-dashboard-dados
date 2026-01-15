@@ -36,7 +36,7 @@ if df is not None:
     st.title("📊 Monitor de Performance")
     
     # Validação das colunas (ID, descrição, categoria, valor)
-    colunas_foco = ['id', 'descrição', 'categoria', 'valor']
+    colunas_foco = ['id', 'descricao', 'categoria', 'valor']
     
     if all(c in df.columns for c in colunas_foco):
         # Filtro de Categoria
