@@ -5,7 +5,7 @@ import plotly.express as px
 st.set_page_config(page_title="Dashboard Imersão", layout="wide")
 
 # Link do CSV (o mesmo que você usou no Colab)
-URL_CSV = "COLE_AQUI_SEU_LINK_DO_CSV"
+URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSpleIWJqucqHpRsU3ERKNAmE_shgQS89UsAVBXwrm9Gjyk1rrEuAhiV4ysUE9tFwQOE0INJFghTfkJ/pub?gid=0&single=true&output=csv"
 
 @st.cache_data # Faz o app carregar mais rápido
 def carregar_dados():
